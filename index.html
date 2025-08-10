@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>WorkoutGen Pro</title>
+<link rel="manifest" href="./manifest.json"/><meta name="theme-color" content="#0f172a"/>
+<style>
+:root{--bg:#0f172a;--ink:#111827;--muted:#6b7280;--ring:#e5e7eb}
+*{box-sizing:border-box}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f8fafc;color:var(--ink)}
+header{background:var(--bg);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+nav button{background:transparent;color:#fff;border:none;margin-right:12px;padding:8px 10px;border-radius:10px;cursor:pointer}
+nav button.active{background:#1f2937}
+main{max-width:980px;margin:0 auto;padding:18px}
+.card{background:#fff;border:1px solid #eef2f7;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.05);padding:16px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{padding:9px 12px;border-radius:10px;border:1px solid var(--ring);background:#fff;cursor:pointer}
+select,input{padding:9px;border-radius:10px;border:1px solid var(--ring);background:#fff}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600}
+h3{margin:0 0 10px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #eee;padding:8px;text-align:left}
+.small{font-size:12px;color:var(--muted)}.kbd{font-family:ui-monospace,monospace;background:#eef2ff;border:1px solid #e5e7eb;border-radius:6px;padding:2px 6px}
+.timer{font-size:28px;font-weight:700}hr{border:none;border-top:1px dashed #e5e7eb;margin:12px 0}
+</style>
+</head>
+<body>
+<header>
+  <div><strong>WorkoutGen Pro</strong></div>
+  <nav>
+    <button id="tab-plan" class="active">Plan</button>
+    <button id="tab-session">Session</button>
+    <button id="tab-log">Log</button>
+  </nav>
+</header>
+<main>
+<section id="plan">
+  <div class="card">
+    <h3>Mode</h3>
+    <div class="row">
+      <button id="toggle">Toggle Mode</button>
+      <span>Current: <strong id="mode">offline</strong></span>
+      <span class="badge" id="status">Offline Ready</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Workout Generator</h3>
+    <div class="row">
+      <div><div class="small">Split</div>
+        <select id="split">
+          <option>Chest & Biceps</option><option>Shoulders & Triceps</option>
+          <option>Back</option><option>Legs</option><option>Full Body</option>
+        </select>
+      </div>
+      <div><div class="small">Goal</div>
+        <select id="goal">
+          <option>Hypertrophy (high reps)</option>
+          <option>Strength (low reps)</option>
+          <option>Endurance (very high reps)</option>
+        </select>
+      </div>
+      <div><div class="small">Equipment</div>
+        <select id="equip"><option>Mixed</option><option>Dumbbells</option><option>Machines</option><option>Bodyweight</option></select>
+      </div>
+      <div><div class="small">Duration</div>
+        <select id="duration"><option>45 min</option><option>30 min</option><option>60 min</option></select>
+      </div>
+      <div><div class="small">Level</div>
+        <select id="level"><option>Intermediate</option><option>Beginner</option><option>Advanced</option></select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="gen">Generate Plan</button>
+      <button id="seed">Seed Sample Logs</button>
+    </div>
+    <hr/>
+    <div id="planEditor" class="small">No plan yet.</div>
+    <div class="row" style="margin-top:10px">
+      <button id="startSession" disabled>Start Session</button>
+      <button id="savePlan" disabled>Save Plan to Log</button>
+    </div>
+  </div>
+</section>
+
+<section id="session" style="display:none">
+  <div class="card">
+    <h3>Active Session</h3>
+    <div class="small">After each set, enter weight/reps and press <span class="kbd">Complete Set</span>. Timer autostarts for rest.</div>
+    <div id="sessionMeta" class="small"></div>
+    <table id="sessionTable">
+      <thead><tr><th>#</th><th>Exercise</th><th>Set</th><th>Weight</th><th>Reps</th><th>Done</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="row" style="margin-top:10px">
+      <button id="finishSession">Finish Session & Save</button>
+      <button id="abortSession">Abort</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Rest Timer</h3>
+    <div class="row">
+      <div class="timer" id="timer">0:00</div>
+      <select id="restSeconds">
+        <option value="45">45s</option><option value="60" selected>60s</option>
+        <option value="90">90s</option><option value="120">120s</option><option value="180">180s</option>
+      </select>
+      <button id="timerStart">Start</button><button id="timerPause">Pause</button>
+      <button id="timerReset">Reset</button><button id="timerSkip">Skip</button>
+    </div>
+    <div class="small">We vibrate when rest is done (if supported).</div>
+  </div>
+</section>
+
+<section id="log" style="display:none">
+  <div class="card">
+    <h3>Workout Log</h3>
+    <div class="row">
+      <button id="loadLogs">Load</button>
+      <button id="clearLogs">Clear All</button>
+      <button id="exportJSON">Export JSON</button>
+      <button id="exportCSV">Export CSV</button>
+    </div>
+    <div id="logOut" class="small" style="margin-top:10px">[]</div>
+  </div>
+</section>
+</main>
+
+<script>
+const state={mode:'offline',plan:null,session:null,timer:{id:null,remaining:0,running:false}};
+// Tabs
+const tabPlan=document.getElementById('tab-plan'),tabSession=document.getElementById('tab-session'),tabLog=document.getElementById('tab-log');
+function activateTab(w){document.getElementById('plan').style.display=w==='plan'?'block':'none';
+document.getElementById('session').style.display=w==='session'?'block':'none';
+document.getElementById('log').style.display=w==='log'?'block':'none';
+[tabPlan,tabSession,tabLog].forEach(b=>b.classList.remove('active'));(w==='plan'?tabPlan:w==='session'?tabSession:tabLog).classList.add('active');}
+tabPlan.onclick=()=>activateTab('plan');tabSession.onclick=()=>activateTab('session');tabLog.onclick=()=>activateTab('log');
+// Mode
+const modeEl=document.getElementById('mode'),statusEl=document.getElementById('status');
+document.getElementById('toggle').onclick=()=>{state.mode=state.mode==='offline'?'api':'offline';modeEl.textContent=state.mode;statusEl.textContent=state.mode==='offline'?'Offline Ready':'API Mode (via server)'};
+// Lib
+const lib={warmup:'5–8 min light cardio + mobility',chest:{Dumbbells:['Incline DB Press','Flat DB Press','DB Flyes','Close-Grip DB Press'],Machines:['Chest Press Machine','Pec Deck','Cable Flyes'],Bodyweight:['Push-ups','Decline Push-ups'],Mixed:[]},biceps:{Dumbbells:['Alt DB Curls','Hammer Curls','Incline DB Curls','Concentration Curls'],Machines:['Cable Curl','Preacher Machine Curl'],Bodyweight:['Chin-ups'],Mixed:[]},shoulders:{Dumbbells:['DB Shoulder Press','Lateral Raise','Front Raise','Rear Delt Flyes'],Machines:['Shoulder Press Machine','Cable Lateral Raise','Reverse Pec Deck'],Bodyweight:['Pike Push-ups'],Mixed:[]},triceps:{Dumbbells:['Overhead DB Extension','DB Skull Crushers','Kickbacks'],Machines:['Cable Pressdown','Rope Overhead Extension','Dip Machine'],Bodyweight:['Bench Dips','Close-Grip Push-ups'],Mixed:[]},back:{Dumbbells:['One-Arm DB Row','DB Row (both)','DB Pullover'],Machines:['Lat Pulldown','Seated Cable Row','Chest-Supported Row'],Bodyweight:['Pull-ups','Inverted Row'],Mixed:[]},legs:{Dumbbells:['Goblet Squat','DB Romanian Deadlift','DB Lunge','DB Split Squat','DB Step-ups','Calf Raises'],Machines:['Leg Press','Seated Leg Curl','Leg Extension','Hack Squat','Calf Raise Machine'],Bodyweight:['Air Squats','Walking Lunges','Glute Bridges','Reverse Lunges'],Mixed:[]}};
+for(const k of ['chest','biceps','shoulders','triceps','back','legs']) lib[k].Mixed=[...lib[k].Dumbbells,...lib[k].Machines];
+const repSchemes={'Hypertrophy (high reps)':{sets:3,reps:'12–15',rest:60},'Strength (low reps)':{sets:4,reps:'4–6',rest:150},'Endurance (very high reps)':{sets:3,reps:'18–25',rest:45}};
+function sample(a,n){const c=[...a],o=[];while(c.length&&o.length<n){o.push(c.splice(Math.floor(Math.random()*c.length),1)[0])}return o}
+function choose(split,equip,duration){const d=duration.includes('30')?'short':duration.includes('60')?'long':'std';let m=[];
+ if(split==='Chest & Biceps'){m=[...sample(lib.chest[equip],d==='long'?3:2),...sample(lib.biceps[equip],d==='long'?3:2)]}
+ else if(split==='Shoulders & Triceps'){m=[...sample(lib.shoulders[equip],d==='long'?3:2),...sample(lib.triceps[equip],d==='long'?3:2)]}
+ else if(split==='Back'){m=sample(lib.back[equip],d==='long'?5:(d==='short'?3:4))}
+ else if(split==='Legs'){m=sample(lib.legs[equip],d==='long'?6:(d==='short'?4:5))}
+ else{m=[...sample(lib.chest[equip],1),...sample(lib.back[equip],1),...sample(lib.legs[equip],2),...sample(lib.shoulders[equip],1),...sample(lib.biceps[equip],1),...sample(lib.triceps[equip],1)]}
+ return m;
+}
+// Plan
+const planEditor=document.getElementById('planEditor'),savePlanBtn=document.getElementById('savePlan'),startSessionBtn=document.getElementById('startSession');
+function renderPlanEditor(){if(!state.plan){planEditor.textContent='No plan yet.';return}
+ const p=state.plan;let html=`<div class="small">Date: ${p.date} | ${p.workout} | Goal: ${p.goal} | Equip: ${p.equip} | Duration: ${p.duration} | Level: ${p.level}</div>`;
+ html+=`<table><thead><tr><th>#</th><th>Exercise</th><th>Sets</th><th>Target Reps</th><th>Rest (s)</th></tr></thead><tbody>`;
+ p.items.forEach((it,idx)=>{html+=`<tr><td>${idx+1}</td><td>${it.name}</td>
+   <td><input type="number" min="1" value="${it.sets}" data-i="${idx}" data-k="sets" style="width:70px"/></td>
+   <td><input value="${it.reps}" data-i="${idx}" data-k="reps" style="width:100px"/></td>
+   <td><input type="number" min="15" value="${it.rest}" data-i="${idx}" data-k="rest" style="width:80px"/></td></tr>`});
+ html+=`</tbody></table>`;planEditor.innerHTML=html;
+ planEditor.querySelectorAll('input').forEach(inp=>{inp.addEventListener('change',e=>{const i=Number(e.target.dataset.i),k=e.target.dataset.k;let v=e.target.value;if(k==='sets'||k==='rest')v=Number(v);state.plan.items[i][k]=v;})});
+ savePlanBtn.disabled=false;startSessionBtn.disabled=false;}
+document.getElementById('gen').onclick=()=>{
+  const split=document.getElementById('split').value,goal=document.getElementById('goal').value,equip=document.getElementById('equip').value,duration=document.getElementById('duration').value,level=document.getElementById('level').value;
+  const s=repSchemes[goal];const list=choose(split,equip,duration).map(n=>({name:n,sets:s.sets,reps:s.reps,rest:s.rest}));
+  state.plan={date:new Date().toISOString().slice(0,10),workout:split,goal,equip,duration,level,warmup:lib.warmup,items:list,cardio:'8 min elliptical',notes:goal.startsWith('Hypertrophy')?'Use lighter weights, strict form.':goal.startsWith('Strength')?'Heavier weight, longer rest.':'Light weight, continuous tempo.'};
+  renderPlanEditor();
+};
+document.getElementById('seed').onclick=()=>{const sample=[{date:'2025-08-10',workout:'Chest & Biceps',goal:'Hypertrophy (high reps)',items:[{name:'DB Press',sets:3,reps:'12-15',rest:60}],completed:true},{date:'2025-08-09',workout:'Back',goal:'Hypertrophy (high reps)',items:[{name:'Lat Pulldown',sets:3,reps:'12-15',rest:60}],completed:true}];localStorage.setItem('workoutLogs',JSON.stringify(sample));alert('Seeded 2 logs.')};
+savePlanBtn.onclick=()=>{if(!state.plan)return;const logs=JSON.parse(localStorage.getItem('workoutLogs')||'[]');logs.unshift({...state.plan,completed:false});localStorage.setItem('workoutLogs',JSON.stringify(logs));alert('Plan saved to log.')};
+// Session
+const sessionMeta=document.getElementById('sessionMeta'),sessionTableBody=document.querySelector('#sessionTable tbody');
+startSessionBtn.onclick=()=>{if(!state.plan)return;const rows=[];state.plan.items.forEach((it,exIdx)=>{for(let s=1;s<=Number(it.sets);s++){rows.push({exIdx,setNum:s,name:it.name,target:it.reps,rest:Number(it.rest),weight:'',reps:'',done:false})}});
+ state.session={meta:{date:state.plan.date,workout:state.plan.workout,goal:state.plan.goal,equip:state.plan.equip,duration:state.plan.duration,level:state.plan.level},rows};renderSessionTable();sessionMeta.textContent=`Date: ${state.session.meta.date} | ${state.session.meta.workout} | ${state.session.meta.goal} | ${state.session.meta.level}`;activateTab('session')};
+function renderSessionTable(){sessionTableBody.innerHTML='';state.session.rows.forEach((r,idx)=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${idx+1}</td><td>${r.name}</td><td>${r.setNum} (${r.target})</td>
+  <td><input type="number" min="0" value="${r.weight}" data-i="${idx}" data-k="weight" style="width:80px"/></td>
+  <td><input type="number" min="0" value="${r.reps}" data-i="${idx}" data-k="reps" style="width:70px"/></td>
+  <td><button data-i="${idx}" class="complete">Complete Set</button></td>`;sessionTableBody.appendChild(tr)});
+ sessionTableBody.querySelectorAll('input').forEach(inp=>{inp.addEventListener('change',e=>{const i=Number(e.target.dataset.i),k=e.target.dataset.k;state.session.rows[i][k]=e.target.value})});
+ sessionTableBody.querySelectorAll('button.complete').forEach(btn=>{btn.addEventListener('click',e=>{const i=Number(e.target.dataset.i);state.session.rows[i].done=true;e.target.textContent='Done';e.target.disabled=true;const sec=Number(state.session.rows[i].rest||60);timerReset(sec);timerStart();})})}
+document.getElementById('finishSession').onclick=()=>{if(!state.session)return;const logs=JSON.parse(localStorage.getItem('workoutLogs')||'[]');const entry={...state.session.meta,items:aggregate(state.session.rows),completed:true,finishedAt:new Date().toISOString()};logs.unshift(entry);localStorage.setItem('workoutLogs',JSON.stringify(logs));alert('Session saved to log.');state.session=null;activateTab('log');loadLogs()};
+document.getElementById('abortSession').onclick=()=>{if(confirm('Abort session? Unsaved sets will be lost.')){state.session=null;activateTab('plan')}};
+function aggregate(rows){const by={};rows.forEach(r=>{if(!by[r.name])by[r.name]=[];by[r.name].push({set:r.setNum,weight:r.weight,reps:r.reps})});return Object.entries(by).map(([name,sets])=>({name,sets}))}
+// Timer
+const timerEl=document.getElementById('timer'),restSel=document.getElementById('restSeconds');
+document.getElementById('timerStart').onclick=()=>{if(state.timer.remaining<=0)timerReset(Number(restSel.value));timerStart()};
+document.getElementById('timerPause').onclick=timerPause;document.getElementById('timerReset').onclick=()=>timerReset(Number(restSel.value));document.getElementById('timerSkip').onclick=()=>{timerReset(0);renderTimer()};
+function timerStart(){if(state.timer.running)return;state.timer.running=true;if(state.timer.remaining<=0)state.timer.remaining=Number(restSel.value);state.timer.id=setInterval(()=>{state.timer.remaining--;renderTimer();if(state.timer.remaining<=0){timerPause();try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}},1000)}
+function timerPause(){if(!state.timer.running)return;state.timer.running=false;clearInterval(state.timer.id)}
+function timerReset(sec){timerPause();state.timer.remaining=sec;renderTimer()}
+function renderTimer(){const s=Math.max(0,state.timer.remaining|0);const m=Math.floor(s/60);const ss=(s%60).toString().padStart(2,'0');timerEl.textContent=`${m}:${ss}`}renderTimer();
+// Log
+const logOut=document.getElementById('logOut');
+document.getElementById('loadLogs').onclick=loadLogs;
+document.getElementById('clearLogs').onclick=()=>{if(confirm('Clear all logs?')){localStorage.removeItem('workoutLogs');loadLogs()}};
+document.getElementById('exportJSON').onclick=()=>{const data=localStorage.getItem('workoutLogs')||'[]';download('workouts.json',data,'application/json')};
+document.getElementById('exportCSV').onclick=()=>{const arr=JSON.parse(localStorage.getItem('workoutLogs')||'[]');const rows=[['date','workout','goal','level','exercise','set','weight','reps']];arr.forEach(e=>{(e.items||[]).forEach(it=>{(it.sets||[]).forEach(s=>{rows.push([e.date,e.workout,e.goal,e.level,it.name,s.set,s.weight,s.reps])})})});const csv=rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');download('workouts.csv',csv,'text/csv')};
+function loadLogs(){const data=JSON.parse(localStorage.getItem('workoutLogs')||'[]');logOut.textContent=JSON.stringify(data,null,2)}
+function download(name,content,type){const blob=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href)}
+// SW
+if('serviceWorker'in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})})}
+</script>
+</body></html>
